@@ -11,20 +11,20 @@ namespace Irony.Compiler.AST {
     Read,
     Write
   }
-  public class IdentifierNode : AstNode {
+  public class VarRefNode : AstNode {
     public string Name;
     public SlotInfo Slot;
     public AccessType Access = AccessType.Read;
 
-    public IdentifierNode(NodeArgs args, AstNode idNode) : base(args) {
+    public VarRefNode(NodeArgs args, AstNode idNode) : base(args) {
       ChildNodes.Clear();
       Name = idNode.GetContent();
     }
-    public IdentifierNode(NodeArgs args, string name) : base(args) {
+    public VarRefNode(NodeArgs args, string name) : base(args) {
       ChildNodes.Clear();
       Name = name;
     }
-    public IdentifierNode(NodeArgs args) : this(args, args.ChildNodes[0]) {
+    public VarRefNode(NodeArgs args) : this(args, args.ChildNodes[0]) {
     }
 
     public override void OnCodeAnalysis(CodeAnalysisArgs args) {
