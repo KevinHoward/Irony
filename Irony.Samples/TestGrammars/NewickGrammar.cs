@@ -5,8 +5,12 @@ using System.Text;
 using Irony.CompilerServices;
 
 namespace Irony.Samples {
-  public class ScannerTestGrammar : Grammar {
-    public ScannerTestGrammar() {
+
+  [Language("Newick", "1.0", "Scientific format to represent trees")]
+  public class NewickGrammar : Grammar {
+    public NewickGrammar() {
+      this.GrammarComments = "See http://en.wikipedia.org/wiki/Newick_format for more info.";
+
       var distance = new NumberLiteral("distance", NumberFlags.AllowSign);
       var name = new IdentifierTerminal("name", TextUtils.DecimalDigits, TextUtils.DecimalDigits + "-");
 
