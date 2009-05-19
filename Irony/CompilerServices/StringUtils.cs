@@ -14,12 +14,21 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Irony {
-  //Some common classes
+namespace Irony.CompilerServices {
 
-  internal static class Utils {
-    public static void NotImplemented(string methodName) {
-      throw new ApplicationException("Member " + methodName + " not implemented.");
+  public static class Strings {
+    public const string AllLatinLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+    public const string DecimalDigits = "1234567890";
+    public const string OctalDigits = "12345670";
+    public const string HexDigits = "1234567890aAbBcCdDeEfF";
+    public const string BinaryDigits = "01";
+
+    public static string JoinStrings(string separator, IEnumerable<string> values) {
+      StringList list = new StringList();
+      list.AddRange(values);
+      string[] arr = new string[list.Count];
+      list.CopyTo(arr, 0);
+      return string.Join(separator, arr);
     }
   }//class
 
@@ -31,7 +40,7 @@ namespace Irony {
       return ToString(" ");
     }
     public string ToString(string separator) {
-      return TextUtils.JoinStrings(separator, this);
+      return Strings.JoinStrings(separator, this);
     }
   }
 
@@ -44,7 +53,7 @@ namespace Irony {
       return ToString(" ");
     }
     public string ToString(string separator) {
-      return TextUtils.JoinStrings(separator, this);
+      return Strings.JoinStrings(separator, this);
     }
     //Used in sorting suffixes and prefixes; longer strings must come first in sort order
     public static int LongerFirst(string x, string y) {
@@ -56,5 +65,6 @@ namespace Irony {
     }
 
   }//class
+
 
 }
