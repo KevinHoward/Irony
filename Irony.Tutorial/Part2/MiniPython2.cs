@@ -14,50 +14,53 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using Irony.Parsing;
-using Irony.Scripting.Ast;
+using Irony.Ast;
 
 namespace Irony.Tutorial.Part2 {
   // The grammar is an extension of expression grammar in Part 1. 
-  // This grammar recognizes programs that contain simple expressions and assignments involving variables
+  // This grammar recognizes programs that contain simple expressions and assignments involving variables,
   // for ex:
   // x = 3 + 4
   // y = x * 2 + 1
-  //  the result of calculation is the result of last expression or assignment (value of "y" in this case).
+  // The result of calculation is the result of last expression or assignment (value of "y" in this case).
 
-  [Language("TutorialGrammar", "2.0", "Sample tutorial grammar")]
-  public class CalcGrammar : Irony.Parsing.Grammar {
-    public CalcGrammar() {
+  [Language("MiniPython2", "2.0", "Multi-line expression evaluator: variables, assignments")]
+  public class MiniPython2 : Irony.Parsing.Grammar {
+    public MiniPython2() {
+
       // 1. Terminals
       var number = new NumberLiteral("number");
       var identifier = new IdentifierTerminal("identifier");
+      var comment = new CommentTerminal("comment", "#", "\n", "\r");
+      //comment must to be added to NonGrammarTerminals list; it is not used directly in grammar rules,
+      // so we add it to this list to let Scanner know that it is also a valid terminal. 
+      base.NonGrammarTerminals.Add(comment);
 
       // 2. Non-terminals
-      var Variable = new NonTerminal("Variable", typeof(VarRefNode));
       var Expr = new NonTerminal("Expr");
       var Term = new NonTerminal("Term");
       var BinExpr = new NonTerminal("BinExpr", typeof(BinExprNode));
       var ParExpr = new NonTerminal("ParExpr");
       var UnExpr = new NonTerminal("UnExpr", typeof(UnExprNode));
       var UnOp = new NonTerminal("UnOp");
-      var BinOp = new NonTerminal("BinOp");
+      var BinOp = new NonTerminal("BinOp", "operator");
       var AssignmentStmt = new NonTerminal("AssignmentStmt", typeof(AssigmentNode));
       var Statement = new NonTerminal("Statement");
       var ProgramLine = new NonTerminal("ProgramLine");
       var Program = new NonTerminal("Program", typeof(StatementListNode));
 
       // 3. BNF rules
-      Variable.Rule = identifier;
       Expr.Rule = Term | UnExpr | BinExpr;
-      Term.Rule = number | ParExpr | Variable;
+      Term.Rule = number | ParExpr | identifier;
       ParExpr.Rule = "(" + Expr + ")";
       UnExpr.Rule = UnOp + Term;
       UnOp.Rule = Symbol("+") | "-";
-      BinExpr.Rule =  Expr + BinOp + Expr;
+      BinExpr.Rule = Expr + BinOp + Expr;
       BinOp.Rule = Symbol("+") | "-" | "*" | "/" | "**";
-      AssignmentStmt.Rule = Variable + "=" + Expr;
+      AssignmentStmt.Rule = identifier + "=" + Expr;
       Statement.Rule = AssignmentStmt | Expr | Empty;
       ProgramLine.Rule = Statement + NewLine;
-      Program.Rule = MakeStarRule(Program, ProgramLine); 
+      Program.Rule = MakeStarRule(Program, ProgramLine);
       this.Root = Program;       // Set grammar root
 
       // 4. Operators precedence
@@ -65,11 +68,13 @@ namespace Irony.Tutorial.Part2 {
       RegisterOperators(2, "*", "/");
       RegisterOperators(3, Associativity.Right, "**");
 
-      RegisterPunctuation( "(", ")");
-      RegisterPunctuation(NewLine); //remove all newLines - important, extra new lines in output tree can mess up calc result
+      RegisterPunctuation("(", ")");
+      MarkTransient(Term, Expr, Statement, BinOp, ProgramLine, ParExpr);
 
-      //automatically add newLine before EOF so that our grammar works
-      this.LanguageFlags = LanguageFlags.NewLineBeforeEOF | LanguageFlags.SupportsInterpreter | LanguageFlags.AutoDetectTransient; 
+      //automatically add NewLine before EOF so that our BNF rules work correctly when there's no final line break in source
+      this.LanguageFlags = LanguageFlags.CreateAst | LanguageFlags.NewLineBeforeEOF | LanguageFlags.SupportsInterpreter;
+
+
 
     }
   }

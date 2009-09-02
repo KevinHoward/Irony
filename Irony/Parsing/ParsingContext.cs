@@ -17,17 +17,17 @@ using Irony.Diagnostics;
 
 namespace Irony.Parsing {
 
-  public enum CompilerOptions {
+  public enum ParseOptions {
     GrammarDebugging = 0x01,
     TraceParser = 0x02,
     AnalyzeCode = 0x10,   //run code analysis; effective only in Module mode
   }
-  public enum CompileMode {
+  public enum ParseMode {
     Module,       //default, continuous input file
     VsLineScan,         // line-by-line scanning in VS integration for syntax highlighting
     //ConsoleInput, //line-by-line from console
   }
-  public enum CompilerErrorLevel {
+  public enum ParserErrorLevel {
     Info    = 0,
     Warning = 1,
     Error   = 2,
@@ -37,10 +37,10 @@ namespace Irony.Parsing {
   // The purpose of this class is to provide a container for information shared 
   // between parser, scanner and token filters.
   // Developers can extend this class to add language-specific properties or methods.
-  public class CompilerContext {
-    public CompilerOptions Options;
-    public CompileMode Mode = CompileMode.Module;
-    public readonly Compiler Compiler;
+  public class ParsingContext {
+    public ParseOptions Options;
+    public ParseMode Mode = ParseMode.Module;
+    public readonly Parser Parser;
     public readonly Dictionary<string, object> Values = new Dictionary<string, object>();
     public int MaxErrors = 20;
     //State variable used in line scanning mode for VS integration; when Terminal produces incomplete token, it sets 
@@ -54,10 +54,10 @@ namespace Irony.Parsing {
     public bool ScannerIsRecovering;
 
     #region constructors
-    public CompilerContext(Compiler compiler) {
-      this.Compiler = compiler;
+    public ParsingContext(Parser parser) {
+      this.Parser = parser;
 #if DEBUG
-      Options |= CompilerOptions.GrammarDebugging;
+      Options |= ParseOptions.GrammarDebugging;
 #endif
     }
     #endregion
@@ -65,7 +65,7 @@ namespace Irony.Parsing {
     #region Helper methods: GetCurrentParserState
     public ParserState GetCurrentParserState() {
       try {
-        return this.Compiler.Parser.CoreParser.CurrentState;
+        return this.Parser.CoreParser.CurrentState;
       } catch {
         return null; 
       }
@@ -96,10 +96,10 @@ namespace Irony.Parsing {
     #endregion
 
     #region Options helper methods
-    public bool OptionIsSet(CompilerOptions option) {
+    public bool OptionIsSet(ParseOptions option) {
       return (Options & option) != 0;
     }
-    public void SetOption(CompilerOptions option, bool value) {
+    public void SetOption(ParseOptions option, bool value) {
       if (value)
         Options |= option;
       else
@@ -110,12 +110,12 @@ namespace Irony.Parsing {
     #region Error handling
     //Error level is not used so far, will implement later
     public void AddError(SourceLocation location, string message, params object[] args) {
-      AddCompilerMessage(CompilerErrorLevel.Error, location, message, args); 
+      AddCompilerMessage(ParserErrorLevel.Error, location, message, args); 
     }
-    public void AddCompilerMessage(CompilerErrorLevel level, SourceLocation location, string message, params object[] args) {
+    public void AddCompilerMessage(ParserErrorLevel level, SourceLocation location, string message, params object[] args) {
       AddCompilerMessage(level, null, location, message, args); 
     }
-    public void AddCompilerMessage(CompilerErrorLevel level, ParserState state, SourceLocation location, string message, params object[] args) {
+    public void AddCompilerMessage(ParserErrorLevel level, ParserState state, SourceLocation location, string message, params object[] args) {
       if (CurrentParseTree == null) return; 
       if (CurrentParseTree.Errors.Count >= MaxErrors) return;
       if (args != null && args.Length > 0)

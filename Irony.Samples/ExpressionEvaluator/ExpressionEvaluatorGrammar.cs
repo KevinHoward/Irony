@@ -17,27 +17,29 @@ using Irony.Parsing;
 using Irony.Ast;
 
 namespace Irony.Samples {
-  // This grammar describes programs that consist of simple expressions and assignments,
+  // This grammar describes programs that consist of simple expressions and assignments
   // for ex:
-  // x = 3 + 4
-  // y = x * 2 + 1
-  //  the result of calculation is the result of last expression or assignment (value of "y" in this case).
+  // x = 3
+  // y = -x + 5
+  //  the result of calculation is the result of last expression or assignment.
   //  Irony's default  runtime provides expression evaluation. 
-  //  Note that in Grammar Explorer the nodes in AST tree  are shown in prefix-like notation; 
-  //  for ex. an operation "2 + 3" is shown with a header node "+ (binary operation)" and two child nodes
-  //  for arguments 2 and 3. 
+  //  supports inc/dec operators (++,--), both prefix and postfix,
+  //  and combined assignment operators like +=, -=, etc.
 
   [Language("ExpressionEvaluator", "1.0", "Multi-line expression evaluator")]
   public class ExpressionEvaluatorGrammar : Irony.Parsing.Grammar {
     public ExpressionEvaluatorGrammar() {
+      this.GrammarComments =
+        @"Simple expression evaluator. ";
       // 1. Terminals
       var number = new NumberLiteral("number");
       var identifier = new IdentifierTerminal("identifier");
-      var comment = new CommentTerminal("comment", "#", "\n", "\r");
-      base.NonGrammarTerminals.Add(comment); 
+      var comment = new CommentTerminal("comment", "#", "\n", "\r"); //new
+      //comment must to be added to NonGrammarTerminals list; it is not used directly in grammar rules,
+      // so we add it to this list to let Scanner know that it is also a valid terminal. 
+      base.NonGrammarTerminals.Add(comment);
 
       // 2. Non-terminals
-      var Variable = new NonTerminal("Variable", typeof(VarRefNode));
       var Expr = new NonTerminal("Expr");
       var Term = new NonTerminal("Term");
       var BinExpr = new NonTerminal("BinExpr", typeof(BinExprNode));
@@ -45,24 +47,29 @@ namespace Irony.Samples {
       var UnExpr = new NonTerminal("UnExpr", typeof(UnExprNode));
       var UnOp = new NonTerminal("UnOp");
       var BinOp = new NonTerminal("BinOp", "operator");
+      var PostFixExpr = new NonTerminal("PostFixExpr", typeof(UnExprNode));
+      var PostFixOp = new NonTerminal("PostFixOp");
       var AssignmentStmt = new NonTerminal("AssignmentStmt", typeof(AssigmentNode));
+      var AssignmentOp = new NonTerminal("AssignmentOp");
       var Statement = new NonTerminal("Statement");
       var ProgramLine = new NonTerminal("ProgramLine");
       var Program = new NonTerminal("Program", typeof(StatementListNode));
 
       // 3. BNF rules
-      Variable.Rule = identifier;
-      Expr.Rule = Term | UnExpr | BinExpr;
-      Term.Rule = number | ParExpr | Variable;
+      Expr.Rule = Term | UnExpr | BinExpr | PostFixExpr;
+      Term.Rule = number | ParExpr | identifier;
       ParExpr.Rule = "(" + Expr + ")";
       UnExpr.Rule = UnOp + Term;
-      UnOp.Rule = Symbol("+") | "-";
-      BinExpr.Rule =  Expr + BinOp + Expr;
+      UnOp.Rule = Symbol("+") | "-" | "++" | "--";
+      BinExpr.Rule = Expr + BinOp + Expr;
       BinOp.Rule = Symbol("+") | "-" | "*" | "/" | "**";
-      AssignmentStmt.Rule = Variable + "=" + Expr;
+      PostFixExpr.Rule = Term + PostFixOp;
+      PostFixOp.Rule = Symbol("++") | "--";
+      AssignmentStmt.Rule = identifier + AssignmentOp + Expr;
+      AssignmentOp.Rule = Symbol("=") | "+=" | "-=" | "*=" | "/=";
       Statement.Rule = AssignmentStmt | Expr | Empty;
       ProgramLine.Rule = Statement + NewLine;
-      Program.Rule = MakeStarRule(Program, ProgramLine); 
+      Program.Rule = MakeStarRule(Program, ProgramLine);
       this.Root = Program;       // Set grammar root
 
       // 4. Operators precedence
@@ -70,11 +77,11 @@ namespace Irony.Samples {
       RegisterOperators(2, "*", "/");
       RegisterOperators(3, Associativity.Right, "**");
 
-      RegisterPunctuation( "(", ")");
-      MarkTransient(Term, Expr, Statement, BinOp, Variable);
+      RegisterPunctuation("(", ")");
+      MarkTransient(Term, Expr, Statement, BinOp, AssignmentOp, ProgramLine, ParExpr);
 
       //automatically add NewLine before EOF so that our BNF rules work correctly when there's no final line break in source
-      this.LanguageFlags = LanguageFlags.NewLineBeforeEOF | LanguageFlags.SupportsInterpreter; 
+      this.LanguageFlags = LanguageFlags.CreateAst | LanguageFlags.NewLineBeforeEOF | LanguageFlags.SupportsInterpreter; 
 
     }
   }

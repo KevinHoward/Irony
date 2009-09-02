@@ -14,27 +14,28 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using Irony.Parsing;
-using Irony.Scripting.Ast;
+using Irony.Ast;
 
 namespace Irony.Tutorial.Part1 {
   //Sample expression grammar; recognizes one-line arithmetic expressions with numbers
   // for example: 
   // 5 + 2.5 * 4
 
-  [Language("TutorialGrammar", "1.0", "Sample tutorial grammar")]
-  public class CalcGrammar : Irony.Parsing.Grammar {
-    public CalcGrammar() {
+  [Language("MiniPython1", "1.0", "A sample grammar for a python-like language, step 1.")]
+  public class MiniPython1 : Irony.Parsing.Grammar {
+    public MiniPython1() {
+
       // 1. Terminals
       var number = new NumberLiteral("number");
 
       // 2. Non-terminals
       var Expr = new NonTerminal("Expr");
       var Term = new NonTerminal("Term");
-      var BinExpr = new NonTerminal("BinExpr", typeof(BinExprNode));
+      var BinExpr = new NonTerminal("BinExpr");
       var ParExpr = new NonTerminal("ParExpr");
-      var UnExpr = new NonTerminal("UnExpr", typeof(UnExprNode));
+      var UnExpr = new NonTerminal("UnExpr");
       var UnOp = new NonTerminal("UnOp");
-      var BinOp = new NonTerminal("BinOp");
+      var BinOp = new NonTerminal("BinOp", "operator");
 
       // 3. BNF rules
       Expr.Rule = Term | UnExpr | BinExpr;
@@ -42,7 +43,7 @@ namespace Irony.Tutorial.Part1 {
       ParExpr.Rule = "(" + Expr + ")";
       UnExpr.Rule = UnOp + Term;
       UnOp.Rule = Symbol("+") | "-";
-      BinExpr.Rule =  Expr + BinOp + Expr;
+      BinExpr.Rule = Expr + BinOp + Expr;
       BinOp.Rule = Symbol("+") | "-" | "*" | "/" | "**";
       this.Root = Expr;       // Set grammar root
 
@@ -51,10 +52,12 @@ namespace Irony.Tutorial.Part1 {
       RegisterOperators(2, "*", "/");
       RegisterOperators(3, Associativity.Right, "**");
 
-      RegisterPunctuation( "(", ")" );
+      RegisterPunctuation("(", ")");
+      MarkTransient(Term, Expr, BinOp, ParExpr);
 
     }
-  }
+  }//class
+
 }//namespace
 
 
