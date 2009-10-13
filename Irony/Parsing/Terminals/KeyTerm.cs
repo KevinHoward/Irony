@@ -16,54 +16,64 @@ using System.Text;
 
 namespace Irony.Parsing {
 
-  public class SymbolTerminalTable : Dictionary<string, SymbolTerminal> {
-    public SymbolTerminalTable(StringComparer comparer) : base(100, comparer) { 
+  public class KeyTermTable : Dictionary<string, KeyTerm> {
+    public KeyTermTable(StringComparer comparer) : base(100, comparer) { 
     }
   }
-  public class SymbolTerminalList : List<SymbolTerminal> { }
+  public class KeyTermList : List<KeyTerm> { }
 
-  //Represents a fixed symbol. 
-  public class SymbolTerminal : Terminal {
-    public SymbolTerminal(string symbol, string name)  : base(name) {
-      _symbol = symbol;
-      base.DisplayName = _symbol;
+  //Keyterm is a keyword or a special symbol used in grammar rules, for example: begin, end, while, =, *, etc.
+  // So "key" comes from the Keyword. 
+  public class KeyTerm : Terminal {
+    public KeyTerm(string text, string name)  : base(name) {
+      _text = text;
+      base.DisplayName = _text;
 
       #region comments
       // Priority - determines the order in which multiple terminals try to match input for a given current char in the input.
       // For a given input char the scanner looks up the collection of terminals that may match this input symbol. It is the order
       // in this collection that is determined by Priority value - the higher the priority, the earlier the terminal gets a chance 
       // to check the input. 
-      //Symbols found in grammar by default have lowest priority to allow other terminals (like identifiers)to check the input first.
+      // Keywords found in grammar by default have lowest priority to allow other terminals (like identifiers)to check the input first.
       // Additionally, longer symbols have higher priority, so symbols like "+=" should have higher priority value than "+" symbol. 
       // As a result, Scanner would first try to match "+=", longer symbol, and if it fails, it will try "+". 
       #endregion
-      base.Priority = LowestPriority + symbol.Length;
+      base.Priority = LowestPriority + text.Length;
     }
 
-    public string Symbol {
+    public string Text {
       [System.Diagnostics.DebuggerStepThrough]
-      get { return _symbol; }
-    }  string _symbol;
+      get { return _text; }
+    }  string _text;
 
-    public SymbolTerminal IsPairFor;
+    public KeyTerm IsPairFor;
     //Normally false, meaning keywords (symbols in grammar consisting of letters) cannot be followed by a letter or digit
     public bool AllowAlphaAfterKeyword = false; 
 
     #region overrides: TryMatch, GetPrefixes(), ToString() 
     public override Token TryMatch(ParsingContext context, ISourceStream source) {
-      if (!source.MatchSymbol(_symbol, !Grammar.CaseSensitive))
+      if (!source.MatchSymbol(_text, !Grammar.CaseSensitive))
         return null;
-      source.PreviewPosition += _symbol.Length;
+      source.PreviewPosition += _text.Length;
       //In case of keywords, check that it is not followed by letter or digit
       if (this.OptionIsSet(TermOptions.IsKeyword) && !AllowAlphaAfterKeyword) {
         var previewChar = source.PreviewChar;
         if (char.IsLetterOrDigit(previewChar) || previewChar == '_') return null; //reject
       }
-      return source.CreateToken(this,_symbol);
+      return source.CreateToken(this, _text);
     }
 
     public override IList<string> GetFirsts() {
-      return new string[] { _symbol };
+      return new string[] { _text };
+    }
+    public override string ToString() {
+      if (Name != Text) return Name; 
+      return Text;
+    }
+    public override string TokenToString(Token token) {
+      var keyw = OptionIsSet(TermOptions.IsKeyword)? " (Keyword)" : " (Key symbol)";
+      var result = (token.ValueString ?? token.Text) + keyw;
+      return result; 
     }
     #endregion
 
@@ -93,7 +103,7 @@ namespace Irony.Parsing {
 
     [System.Diagnostics.DebuggerStepThrough]
     public override int GetHashCode() {
-      return _symbol.GetHashCode();
+      return _text.GetHashCode();
     }
 
   }//class
