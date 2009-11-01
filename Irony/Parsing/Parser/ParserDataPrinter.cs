@@ -1,12 +1,24 @@
-﻿using System;
+﻿#region License
+/* **********************************************************************************
+ * Copyright (c) Roman Ivantsov
+ * This source code is subject to terms and conditions of the MIT License
+ * for Irony. A copy of the license can be found in the License.txt file
+ * at the root of this distribution. 
+ * By using this source code in any fashion, you are agreeing to be bound by the terms of the 
+ * MIT License.
+ * You must not remove this notice from this software.
+ * **********************************************************************************/
+#endregion
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Irony.Parsing;
 using Irony.Parsing.Construction;
 
-namespace Irony.Diagnostics {
-  public static class DiagnosticUtils {
+namespace Irony.Parsing {
+  public static class ParserDataPrinter { 
 
     public static string PrintStateList(LanguageData language) {
       StringBuilder sb = new StringBuilder();
@@ -36,7 +48,7 @@ namespace Irony.Diagnostics {
           ParserAction action = state.Actions[key];
           if (action.ActionType != ParserActionType.Shift && action.ActionType != ParserActionType.Jump) continue;
           if (!headerPrinted)
-            sb.Append("  Shifts: ");
+            sb.Append("  Transitions: ");
           headerPrinted = true;
           sb.Append(key.ToString());
           if (action.ActionType == ParserActionType.Shift)

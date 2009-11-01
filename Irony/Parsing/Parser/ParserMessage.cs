@@ -14,27 +14,35 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Irony.Parsing { 
+namespace Irony.Parsing {
 
-  //Container for syntax error
-  public class SyntaxError {
-    public SyntaxError(SourceLocation location, string message, ParserState parserState) {
+  public enum ParserErrorLevel {
+    Info = 0,
+    Warning = 1,
+    Error = 2,
+  }
+
+  //Container for syntax errors and warnings
+  public class ParserMessage {
+    public ParserMessage(ParserErrorLevel level, SourceLocation location, string message, ParserState parserState) {
+      Level = level; 
       Location = location;
       Message = message;
       ParserState = parserState;
     }
 
+    public readonly ParserErrorLevel Level;
+    public readonly ParserState ParserState;
     public readonly SourceLocation Location;
     public readonly string Message;
-    public ParserState ParserState; 
 
     public override string ToString() {
       return Message;
     }
   }//class
 
-  public class SyntaxErrorList : List<SyntaxError> {
-    public static int ByLocation(SyntaxError x, SyntaxError y) {
+  public class ParserMessageList : List<ParserMessage> {
+    public static int ByLocation(ParserMessage x, ParserMessage y) {
       return SourceLocation.Compare(x.Location, y.Location);
     }
   }
