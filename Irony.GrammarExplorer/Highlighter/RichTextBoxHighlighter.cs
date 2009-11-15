@@ -24,7 +24,6 @@ using System.Drawing.Drawing2D;
 using System.Threading;
 using System.Runtime.InteropServices;
 using Irony.Parsing;
-using Irony.EditorServices;
 using System.Diagnostics;
 
 namespace Irony.GrammarExplorer {
@@ -77,10 +76,12 @@ namespace Irony.GrammarExplorer {
     }
 
     public void Dispose() {
+      Adapter.Stop();
       _disposed = true; 
       Disconnect();
       this.ReleaseHandle();
       GC.SuppressFinalize(this);
+
     }
     private void InitColorTable() {
       TokenColors[TokenColor.Comment] = Color.Green;
