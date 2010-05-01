@@ -48,14 +48,17 @@ namespace Irony.Parsing {
           }
         }
         sb.Append("  Transitions: ");
+        bool atFirst = true; 
         foreach (BnfTerm key in state.Actions.Keys) {
           ParserAction action = state.Actions[key];
-          if (action.ActionType != ParserActionType.Shift) continue;
+          var hasTransitions = action.ActionType == ParserActionType.Shift || action.ActionType == ParserActionType.Operator;
+          if (!hasTransitions)
+            continue;
+          if (!atFirst) sb.Append(", ");
+          atFirst = false; 
           sb.Append(key.ToString());
-          if (action.ActionType == ParserActionType.Shift)
-            sb.Append("->"); //shift
+          sb.Append("->");
           sb.Append(action.NewState.Name);
-          sb.Append(", ");
         }
         sb.AppendLine();
         sb.AppendLine();
